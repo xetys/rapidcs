@@ -31,12 +31,18 @@
  */
 
 #include <iostream>
+#include "speedrand.cc"
 #include "combat.cc"
+
 
 int main()
 {
-	
-	CombatSys lcsInstance;
+    SpeedRand sr;
+    sr.InitRand();
+    for(int i = 0; i < 10;i++)printf("%i\r\n",(int)sr.RandomNumber(100));
+    
+    //return 0;
+    CombatSys lcsInstance;
 
 	lcsInstance.setUnitCount(22);
 	

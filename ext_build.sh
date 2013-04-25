@@ -9,6 +9,8 @@ cp config.m4 $DIRNAME
 cp cs_extension.cc $DIRNAME
 cp combat.h $DIRNAME
 cp combat.cc $DIRNAME
+cp speedrand.h $DIRNAME
+cp speedrand.cc $DIRNAME
 cp php_combatsystem.h $DIRNAME
 
 cd "$DIRNAME/"

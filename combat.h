@@ -4,7 +4,7 @@ const unsigned T_DEFENDER = 1;
 const unsigned MAX_SLOTS = 100;
 
 struct T_SHIP {
-	int id;
+    int id;
 	long attack;
 	long hull;
 	long shield;
@@ -45,7 +45,8 @@ class T_UNIT {
 
 class RNG
 {
-	
+	private:
+    SpeedRand _sr;
 	
 	public:
 	RNG();
@@ -55,6 +56,8 @@ class RNG
 	bool chanceDecide(int chance, bool toPerMille);
 	
 	int getRandom(int a, int b);
+    
+    unsigned long RandomNumber(unsigned long Max);
 };
 class CombatSys
 {

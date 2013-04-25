@@ -23,6 +23,7 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "php_combatsystem.h"
+#include "speedrand.cc"
 #include "combat.cc"
 
 zend_object_handlers combatsystem_object_handlers;
@@ -67,7 +68,7 @@ zend_object_value combatsystem_create_handler(zend_class_entry *type TSRMLS_DC)
 }
 PHP_METHOD(CombatSys , __construct)
 {
-	CombatSys *combatsystem = NULL;
+    CombatSys *combatsystem = NULL;
 	zval *object = getThis();
 
 	combatsystem = new CombatSys();

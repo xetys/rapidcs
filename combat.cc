@@ -37,12 +37,12 @@
 
 RNG::RNG()
 {
-    srand(time(0));
+    this->_sr.InitRand();
 }
 
 bool RNG::chanceDecide(int chance, bool toPerMille)
 {
-	return toPerMille ? this->getRandom(0,999) < chance : getRandom(0,99) < chance;
+    return toPerMille ? this->getRandom(0,999) < chance : getRandom(0,99) < chance;
 }
 bool RNG::chanceDecide(int chance)
 {
@@ -51,7 +51,8 @@ bool RNG::chanceDecide(int chance)
 int RNG::getRandom(int a, int b)
 {
 	if(a == b) return a;
-	int randnum = rand() % 10000;
+	//int randnum = rand() % 10000;
+    int randnum = this->_sr.RandomNumber(10000);
 	float zahl = a + (randnum/10000.0)*(b-a);
 	
 	int c = (int) zahl;
@@ -60,7 +61,10 @@ int RNG::getRandom(int a, int b)
 
 	return a == b && a == 0 ? 0 : c;
 }
-
+unsigned long RNG::RandomNumber(unsigned long Max)
+{
+    return this->_sr.RandomNumber(Max);
+}
 CombatSys::CombatSys()
 {
 	this->_PLAYERS[T_ATTACKER] = (T_PLAYER*) malloc(MAX_SLOTS * sizeof(T_PLAYER));
@@ -213,10 +217,10 @@ void CombatSys::battle()
 				{
 					T_UNIT unit = {
 										false,
-										this->_SHIPS[j].shield * (1 + (float)(this->_PLAYERS[T_ATTACKER][i].techShield / 10)),
-										this->_SHIPS[j].shield * (1 + (float)(this->_PLAYERS[T_ATTACKER][i].techShield / 10)),
-										this->_SHIPS[j].hull * (1 + (float)(this->_PLAYERS[T_ATTACKER][i].techArmor / 10)),
-										this->_SHIPS[j].hull * (1 + (float)(this->_PLAYERS[T_ATTACKER][i].techArmor / 10)),
+										this->_SHIPS[j].shield * (1 + (float)(this->_PLAYERS[T_ATTACKER][i].techShield / 10.0f)),
+										this->_SHIPS[j].shield * (1 + (float)(this->_PLAYERS[T_ATTACKER][i].techShield / 10.0f)),
+										this->_SHIPS[j].hull * (1 + (float)(this->_PLAYERS[T_ATTACKER][i].techArmor / 10.0f)),
+										this->_SHIPS[j].hull * (1 + (float)(this->_PLAYERS[T_ATTACKER][i].techArmor / 10.0f)),
 										&this->_SHIPS[j],
 										&this->_PLAYERS[T_ATTACKER][i]
 					};
@@ -239,10 +243,10 @@ void CombatSys::battle()
 				{
 					T_UNIT unit = {
 										false,
-										this->_SHIPS[j].shield * (1 + (float)(this->_PLAYERS[T_DEFENDER][i].techShield / 10)),
-										this->_SHIPS[j].shield * (1 + (float)(this->_PLAYERS[T_DEFENDER][i].techShield / 10)),
-										this->_SHIPS[j].hull * (1 + (float)(this->_PLAYERS[T_DEFENDER][i].techArmor / 10)),
-										this->_SHIPS[j].hull * (1 + (float)(this->_PLAYERS[T_DEFENDER][i].techArmor / 10)),
+										this->_SHIPS[j].shield * (1 + (float)(this->_PLAYERS[T_DEFENDER][i].techShield / 10.0f)),
+										this->_SHIPS[j].shield * (1 + (float)(this->_PLAYERS[T_DEFENDER][i].techShield / 10.0f)),
+										this->_SHIPS[j].hull * (1 + (float)(this->_PLAYERS[T_DEFENDER][i].techArmor / 10.0f)),
+										this->_SHIPS[j].hull * (1 + (float)(this->_PLAYERS[T_DEFENDER][i].techArmor / 10.0f)),
 										&this->_SHIPS[j],
 										&this->_PLAYERS[T_DEFENDER][i]
 					};
@@ -285,7 +289,7 @@ void CombatSys::battle()
 				if(explodedUnits[T_DEFENDER] == this->allShipCount[T_DEFENDER])
 					break;
 				
-				int vs = this->_RNG.getRandom(explodedUnits[T_DEFENDER],this->allShipCount[T_DEFENDER] - 1);
+				int vs = this->_SHOOT_AGAINST_EXPLODED ? this->_RNG.RandomNumber(this->allShipCount[T_DEFENDER]) : this->_RNG.getRandom(explodedUnits[T_DEFENDER],this->allShipCount[T_DEFENDER] - 1);
 
 				if(!this->_UNITS[T_DEFENDER][vs].exploded || this->_SHOOT_AGAINST_EXPLODED)
 				{
@@ -324,7 +328,7 @@ void CombatSys::battle()
 					break;
 				
 				thisRound->defendShots++;
-				int vs = this->_RNG.getRandom(explodedUnits[T_ATTACKER],this->allShipCount[T_ATTACKER] - 1);
+				int vs = this->_SHOOT_AGAINST_EXPLODED ? this->_RNG.RandomNumber(this->allShipCount[T_ATTACKER]) : this->_RNG.getRandom(explodedUnits[T_ATTACKER],this->allShipCount[T_ATTACKER] - 1);
 
 				if(!this->_UNITS[T_ATTACKER][vs].exploded || this->_SHOOT_AGAINST_EXPLODED)
 					this->Shoot(&this->_UNITS[T_DEFENDER][d], &this->_UNITS[T_ATTACKER][vs], &thisRound->defendDamage, &thisRound->attackAbsorbed, &shooting);
@@ -473,14 +477,53 @@ void CombatSys::Shoot(T_UNIT *source, T_UNIT *target, long *attackpower, long *a
 
 	float		dmgPrcnt;
 
-	attack = source->original->attack * (1 + (float)(source->owner->techWeapon / 10));
+	attack = source->original->attack * (1 + (float)(source->owner->techWeapon / 10.0f));
 	shields = target->shieldLeft;
 	hull = target->hullLeft;
-
+    
+    *attackpower += attack;
+    //lets try it speedsim like
+    double Dam = (double)attack;
+    double Dam2 = Dam;
+    
+    double maxShield = (double)(target->shieldMax);
+    if(Dam < target->shieldLeft)
+    {
+        // round damage down to full percents
+        double perc = floor(100.0f * Dam / maxShield);
+        Dam = maxShield * perc;
+        Dam /= 100.0f;
+        
+        Dam2 = Dam;
+    }
+    if(target->shieldLeft <= 0 || Dam > 0)
+	{
+        // reduce shield by damage
+		Dam -= target->shieldLeft;
+		target->shieldLeft -= Dam2;
+		if(Dam < 0)
+			Dam = 0;
+	}
+	else
+	{
+		Dam = 0;
+	}
+	*absorbed += (attack - Dam);
+    
+    if(target->shieldLeft < 0)
+		target->shieldLeft = 0;
+	if(Dam > 0)
+	{
+        // if damage left, destroy hull
+		target->hullLeft -= Dam;
+		if(target->hullLeft < 0)
+			target->hullLeft = 0;
+	}
+    /*
 	//the 1%-rule
 	if(target->shieldLeft == 0 || (float)(attack / (float)(target->shieldMax) > 0.01))
 	{
-		*attackpower += attack;
+		
 		//first the shields
 		if(attack < shields)
 		{
@@ -498,15 +541,16 @@ void CombatSys::Shoot(T_UNIT *source, T_UNIT *target, long *attackpower, long *a
 
 			target->hullLeft -= attack;
 
-			dmgPrcnt = (float)((1 - target->hullLeft / (float)(target->hullMax))) * 100;
-			if(dmgPrcnt > 30)
-			{
-				//target->exploded = true;
-				target->exploded = this->_RNG.chanceDecide((int)(dmgPrcnt));
-			}
+			
 		}
 	}
-
+    */
+    dmgPrcnt = (float)((1 - target->hullLeft / (float)(target->hullMax))) * 100;
+	if(dmgPrcnt > 30)
+	{
+		//target->exploded = true;
+		target->exploded = this->_RNG.chanceDecide((int)(dmgPrcnt));
+	}
 	//rapidfire
     if(this->_ENABLE_RAPID_FIRE)
     {
