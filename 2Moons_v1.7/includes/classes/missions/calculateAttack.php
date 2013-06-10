@@ -29,6 +29,8 @@
 function calculateAttack(&$attackers, &$defenders, $FleetTF, $DefTF)
 {
     global $pricelist, $CombatCaps, $resource;
+    
+    
     if(!class_exists("CombatSys"))
         return calculateAttack2Moons($attackers, $defenders, $FleetTF, $DefTF);
     //return calculateAttack2Moons($attackers, $defenders, $FleetTF, $DefTF);
@@ -133,7 +135,7 @@ function calculateAttack(&$attackers, &$defenders, $FleetTF, $DefTF)
     $laAttackShips = array();
     foreach($attackers as $liPlayerId  => $laData)
     {
-        $laAttackShips[$liPlayerId] = array();
+        $laAttackShips[$laIgnPlayer2CsPlayerA[$liPlayerId]] = array();
         foreach($laData["unit"] as $liUnitId => $liAmount)
             $laAttackShips[$laIgnPlayer2CsPlayerA[$liPlayerId]][$laIgmId2CsId[$liUnitId]] = $liAmount;
     }
@@ -141,9 +143,11 @@ function calculateAttack(&$attackers, &$defenders, $FleetTF, $DefTF)
     $laDefendShips = array();
     foreach($defenders as $liPlayerId  => $laData)
     {
-        $laDefendShips[$liPlayerId] = array();
+        $laDefendShips[$laIgnPlayer2CsPlayerD[$liPlayerId]] = array();
         foreach($laData["unit"] as $liUnitId => $liAmount)
+        {
             $laDefendShips[$laIgnPlayer2CsPlayerD[$liPlayerId]][$laIgmId2CsId[$liUnitId]] = $liAmount;
+        }
     }
     
     //telling this the combatsystem
@@ -158,6 +162,7 @@ function calculateAttack(&$attackers, &$defenders, $FleetTF, $DefTF)
         foreach($laShips as $liSID => $liAmount)
             $lcsInstance->addDefendShips($liId,$liSID,$liAmount);
     }
+    
     /*
     * Now the combatsystem is ready to battle. Please note, that all further methods WON'T work, if the methods above weren't called in exactly that order.
     * If you are going to change or to reproduce the communication to the CombatSys class, you might risk fatal php errors and even crashes.
@@ -222,6 +227,7 @@ function calculateAttack(&$attackers, &$defenders, $FleetTF, $DefTF)
                             //combatsystem, and only open new servers with the compiled version they still have? Now you know it ;)
                             
     $lsResult = $lcsInstance->getResult(); //this comes in json-format
+    //echo("<pre>".$lsResult);
     $laResult = (array)json_decode($lsResult,true);
     
     
@@ -231,7 +237,7 @@ function calculateAttack(&$attackers, &$defenders, $FleetTF, $DefTF)
     $laRounds = $laResult["rounds"];
     
     //now comes the modification //the CS does only know 0 - 5, we don't want any errors!
-    for ($ROUNDC = 0; $ROUNDC < 5; $ROUNDC++) 
+    for ($ROUNDC = 0; $ROUNDC <= 6; $ROUNDC++) 
     {
 		$attackDamage  = array('total' => 0);
 		$attackShield  = array('total' => 0);
@@ -282,6 +288,7 @@ function calculateAttack(&$attackers, &$defenders, $FleetTF, $DefTF)
 
     
 			foreach ($defender['unit'] as $element => $amount) {
+                //echo "$ROUNDC $element $amount ".PHP_EOL;
                 //same here
 				$thisAtt	= ($CombatCaps[$element]['attack']) * $attTech; //attaque
 				$thisDef	= ($CombatCaps[$element]['shield']) * $defTech ; //bouclier
@@ -321,10 +328,10 @@ function calculateAttack(&$attackers, &$defenders, $FleetTF, $DefTF)
         {
             $defender_n[$liPlayerId] = array();
             foreach($laUnits["unit"] as $liIgmId => $liAmount)
-                if(!isset($laRounds[$ROUNDC]["dunits"][$laCsPlayer2IgmPlayerD[$liPlayerId]][$laIgmId2CsId[$liIgmId]]))
+                if(!isset($laRounds[$ROUNDC]["dunits"][$laIgnPlayer2CsPlayerD[$liPlayerId]][$laIgmId2CsId[$liIgmId]]))
                     $defender_n[$liPlayerId][$liIgmId] = 0;
                 else
-                    $defender_n[$liPlayerId][$liIgmId] = $laRounds[$ROUNDC]["dunits"][$laCsPlayer2IgmPlayerD[$liPlayerId]][$laIgmId2CsId[$liIgmId]];
+                    $defender_n[$liPlayerId][$liIgmId] = $laRounds[$ROUNDC]["dunits"][$laIgnPlayer2CsPlayerD[$liPlayerId]][$laIgmId2CsId[$liIgmId]];
         }
         /*
         foreach($laRounds[$ROUNDC]["dunits"] as $liPlayerId => $laUnits)
